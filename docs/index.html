@@ -1,106 +1,115 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CMF - Conversational Markdown Format</title>
-  <style>
-    :root {
-      --bg: #fafafa;
-      --fg: #1a1a1a;
-      --muted: #666;
-      --accent: #0066cc;
-      --code-bg: #f0f0f0;
-      --border: #ddd;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1a1a1a;
-        --fg: #e0e0e0;
-        --muted: #999;
-        --accent: #6ab0f3;
-        --code-bg: #2d2d2d;
-        --border: #444;
-      }
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.6;
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-      background: var(--bg);
-      color: var(--fg);
-    }
-    h1 { margin-bottom: 0.25rem; }
-    .tagline { color: var(--muted); margin-top: 0; }
-    h2 { margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-    a { color: var(--accent); }
-    pre {
-      background: var(--code-bg);
-      padding: 1rem;
-      overflow-x: auto;
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-    code {
-      background: var(--code-bg);
-      padding: 0.15rem 0.3rem;
-      border-radius: 3px;
-      font-size: 0.9em;
-    }
-    pre code { background: none; padding: 0; }
-    .example { display: grid; gap: 1rem; }
-    @media (min-width: 600px) {
-      .example { grid-template-columns: 1fr 1fr; }
-    }
-    .example > div > p { margin-top: 0; font-weight: 600; font-size: 0.85rem; color: var(--muted); }
-    ul { padding-left: 1.5rem; }
-    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; }
-  </style>
-</head>
-<body>
-  <h1>CMF</h1>
-  <p class="tagline">Conversational Markdown Format</p>
+    <head>
+        <meta charset="UTF-8" />
+        <title>CMF - Sector F Labs</title>
+        <link rel="icon" type="image/png" href="/logo-nocircle.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Store LLM conversations as plain markdown files. Human-readable, portable, tool-friendly." />
+        <meta property="og:title" content="CMF - Conversational Markdown Format" />
+        <meta property="og:description" content="Store LLM conversations as plain markdown files. Human-readable, portable, tool-friendly." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://sectorflabs.com/conversational-markdown-format/" />
+        <link rel="stylesheet" href="/style.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <style>
+            h2 {
+                margin-top: 2.5rem;
+                border-bottom: 1px solid var(--hr-color);
+                padding-bottom: 0.5rem;
+            }
+            .example {
+                display: grid;
+                gap: 1rem;
+            }
+            @media (min-width: 600px) {
+                .example { grid-template-columns: 1fr 1fr; }
+            }
+            .example > div > p {
+                margin-top: 0;
+                font-weight: 500;
+                font-size: 0.85rem;
+                color: var(--footer-text);
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <a href="/index.html">
+                <img class="invert" src="/logo-transparent.png" alt="Sector F Logo" />
+                <h1>Sector F Labs</h1>
+            </a>
+        </header>
 
-  <p>A markdown-based interchange format for LLM conversations. Human-readable, machine-parseable, tool-friendly.</p>
+        <div class="layout-container">
+            <nav>
+                <ul>
+                    <li><a href="/conversational-markdown-format/">CMF</a></li>
+                    <li><a href="/projects/reservoir">Reservoir</a></li>
+                </ul>
+            </nav>
 
-  <h2>Format</h2>
-  <p>User messages are blockquotes (<code>&gt;</code>). Everything else is assistant content.</p>
+            <main>
+                <h1>Conversational Markdown Format</h1>
 
-  <div class="example">
-    <div>
-      <p>CMF</p>
-      <pre><code>&gt; What is 2+2?
+                <p><strong>Store LLM conversations as plain text files.</strong></p>
+
+                <p>Every conversation you have with an AI is valuable. It contains decisions, explanations, code, and context that you may need again. But most tools lock these conversations into proprietary formats, vendor-specific exports, or bloated JSON that nobody wants to read.</p>
+
+                <p>CMF stores conversations as valid CommonMark markdown. Open a CMF file in any text editor, markdown viewer, or note-taking app and it just works. Search with grep, diff with git, edit by hand. No special tools required.</p>
+
+                <h2>Why Plain Text?</h2>
+                <p>Plain text is the universal interface. CMF files work with grep, sed, awk, and every other Unix tool. Track changes with git. Search across hundreds of conversations with ripgrep. Process them programmatically, feed them to other models, or move them between clients and agents. Your conversations stay portable across tools, vendors, and time.</p>
+
+                <p>For example, generate a report from past conversations with a single command:</p>
+
+                <pre><code>cat project-*.cmf | claude -p "Summarize the key decisions made"</code></pre>
+
+                <h2>Chat Clients as File Editors</h2>
+                <p>The vision for CMF is simple: chat applications should operate as file editors. When you start a conversation, the client creates a CMF file. When you send a message, it appends to that file. When the other party responds, it appends to that file. The file <em>is</em> the conversation.</p>
+
+                <p>If every chat client&mdash;whether CLI, desktop app, or web interface&mdash;reads and writes the same CMF format, conversations become truly portable. Start a chat in one tool, continue it in another. Switch clients without losing history. Your conversations live in your filesystem, not in someone else's database.</p>
+
+                <p>And while the tooling here focuses on LLM conversations, CMF works for any dialogue. Human-to-human chats, interview transcripts, support tickets, meeting notes&mdash;any conversation with turns can be expressed as CMF.</p>
+
+                <p>This also means you can edit conversations by hand. Fix a typo, redact sensitive information, or merge two related chats&mdash;it's just text.</p>
+
+                <h2>Format</h2>
+                <p>User messages are blockquotes (<code>&gt;</code>). Everything else is assistant content. That's it.</p>
+
+                <div class="example">
+                    <div>
+                        <p>CMF</p>
+                        <pre><code>&gt; What is 2+2?
 The answer is 4.
 
 &gt; Thanks!
 You're welcome.</code></pre>
-    </div>
-    <div>
-      <p>JSON (OpenAI Chat)</p>
-      <pre><code>[
+                    </div>
+                    <div>
+                        <p>JSON (OpenAI Chat)</p>
+                        <pre><code>[
   {"role": "user", "content": "What is 2+2?"},
   {"role": "assistant", "content": "The answer is 4."},
   {"role": "user", "content": "Thanks!"},
   {"role": "assistant", "content": "You're welcome."}
 ]</code></pre>
-    </div>
-  </div>
+                    </div>
+                </div>
 
-  <h2>Rules</h2>
-  <ul>
-    <li>User lines start with <code>&gt;</code> in column 1</li>
-    <li>Multi-user chats use <code>&gt; @username:</code> prefix</li>
-    <li>Assistant content is everything between user blocks</li>
-    <li>Indent blockquotes (<code>&nbsp;&gt; text</code>) to escape them in assistant content</li>
-    <li>Files use <code>.cmf</code> extension &mdash; CMF is valid CommonMark</li>
-  </ul>
+                <h2>Rules</h2>
+                <ul>
+                    <li>User lines start with <code>&gt;</code> in column 1</li>
+                    <li>Multi-user chats use <code>&gt; @username:</code> prefix</li>
+                    <li>Assistant content is everything between user blocks</li>
+                    <li>Indent blockquotes (<code>&nbsp;&gt; text</code>) to escape them in assistant content</li>
+                    <li>Files use <code>.cmf</code> extension &mdash; CMF is valid CommonMark</li>
+                </ul>
 
-  <h2>CLI</h2>
-  <pre><code># Install
-cargo install cmf
+                <h2>CLI</h2>
+                <pre><code># Install
+git clone https://github.com/Sector-F-Labs/conversational-markdown-format.git
+cargo install --path conversational-markdown-format
 
 # Detect CMF and count turns
 cmf detect conversation.cmf
@@ -114,16 +123,16 @@ cmf to-openai-chat conversation.cmf
 # Convert to OpenAI Responses API format
 cmf to-openai-responses conversation.cmf</code></pre>
 
-  <h2>Design Principles</h2>
-  <ul>
-    <li><strong>Human-readable</strong> &mdash; Valid markdown, renders in any viewer</li>
-    <li><strong>Tool-friendly</strong> &mdash; Works with grep, diff, pipes, VCS</li>
-    <li><strong>Minimal</strong> &mdash; No required metadata, no sidecars</li>
-    <li><strong>Unix philosophy</strong> &mdash; Text as universal interface</li>
-  </ul>
+                <h2>Design Choices</h2>
+                <ul>
+                    <li><strong>Blockquotes for users</strong> &mdash; Natural fit: blockquotes already mean "quoted speech" in writing</li>
+                    <li><strong>No metadata required</strong> &mdash; A conversation is just turns. Everything else is optional.</li>
+                    <li><strong>Valid CommonMark</strong> &mdash; CMF files render correctly in GitHub, Obsidian, VS Code, anywhere</li>
+                    <li><strong>Escaping via indent</strong> &mdash; Need a blockquote in assistant content? Just indent it one space.</li>
+                </ul>
 
-  <h2>Library</h2>
-  <pre><code>use cmf::Document;
+                <h2>Library</h2>
+                <pre><code>use cmf::Document;
 
 let doc = Document::parse(input);
 for turn in &amp;doc.turns {
@@ -135,14 +144,37 @@ for turn in &amp;doc.turns {
 let messages = doc.to_openai_chat();
 let responses = doc.to_openai_responses();</code></pre>
 
-  <h2>Links</h2>
-  <ul>
-    <li><a href="https://github.com/divanvisagie/conversational-markdown-format">GitHub</a></li>
-    <li><a href="https://crates.io/crates/cmf">crates.io</a></li>
-  </ul>
+                <h2>License</h2>
+                <p>BSD-3-Clause &mdash; <a href="https://github.com/Sector-F-Labs/conversational-markdown-format"><i class="fab fa-github"></i> GitHub</a></p>
+            </main>
 
-  <footer>
-    <p>BSD-3-Clause &middot; <a href="https://github.com/divanvisagie/conversational-markdown-format">Source</a></p>
-  </footer>
-</body>
+            <div class="spacer"></div>
+        </div>
+
+        <footer>
+            Sector F Labs • Copyright 2025 •
+            <a href="https://github.com/Sector-F-Labs">GitHub</a>
+        </footer>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                document.querySelectorAll("pre").forEach(function (pre) {
+                    var btn = document.createElement("button");
+                    btn.className = "copy-btn";
+                    btn.textContent = "Copy";
+                    pre.insertBefore(btn, pre.firstChild);
+                    btn.addEventListener("click", function (e) {
+                        e.preventDefault();
+                        var code = pre.querySelector("code");
+                        var text = code ? code.innerText : pre.innerText;
+                        navigator.clipboard.writeText(text);
+                        btn.textContent = "Copied!";
+                        setTimeout(function () {
+                            btn.textContent = "Copy";
+                        }, 1200);
+                    });
+                });
+            });
+        </script>
+    </body>
 </html>

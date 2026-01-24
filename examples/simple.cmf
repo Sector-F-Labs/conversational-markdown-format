@@ -1,9 +1,59 @@
-> @alice: Can you explain the steps?
-Yes. First you need to set up your environment.
+> @alice: Can you explain the setup steps?
+# Setup Guide
 
-Second, note that assistant messages can be multi-paragraph.
+Yes! Here are the **essential steps** for getting started:
+
+## 1. Environment Setup
+
+First you need to set up your environment. Install the following dependencies:
+
+| Tool | Version | Required |
+|------|---------|----------|
+| Rust | 1.70+ | Yes |
+| Node.js | 18+ | Optional |
+| Make | 4.0+ | Yes |
+
+## 2. Installation
+
+Here's the basic installation command:
+
+```bash
+curl https://install.example.com/setup.sh | bash
+cargo build --release
+```
+
+Second, note that assistant messages can be **multi-paragraph** and support _markdown formatting_.
 
  > This is an assistant blockquote (indented to avoid being parsed as a user line).
 
-> Thanks!
-Glad it helped.
+## 3. Configuration
+
+Create a config file with your settings:
+
+```rust
+let config = Config {
+    debug: false,
+    timeout: 30,
+    retries: 3,
+};
+```
+
+> @bob: Is there a quick start example?
+Absolutely! Here's a **minimal example** to get you running in seconds:
+
+```rust
+fn main() {
+    println!("Hello, World!");
+}
+```
+
+You can run it with `cargo run`. Make sure you have **Rust 1.70 or later** installed.
+
+| Step | Command | Time |
+|------|---------|------|
+| Build | cargo build | ~30s |
+| Test | cargo test | ~10s |
+| Deploy | cargo release | ~60s |
+
+> Thanks for the detailed explanation!
+You're welcome! Feel free to reach out if you need **more help**.

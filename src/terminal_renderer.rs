@@ -99,27 +99,19 @@ impl CodeBlockRenderer {
             return String::new();
         }
 
-        let max_len = lines.iter().map(|l| l.len()).max().unwrap_or(0);
         let mut output = String::new();
 
-        // Top border
-        output.push('┌');
-        output.push_str(&"─".repeat(max_len + 2));
-        output.push_str("┐\n");
-
-        // Code lines
+        // Indent each line by 4 spaces
         for line in lines {
-            output.push('│');
-            output.push(' ');
-            output.push_str(&format!("{:<width$}", line, width = max_len));
-            output.push(' ');
-            output.push_str("│\n");
+            output.push_str("    ");
+            output.push_str(line);
+            output.push('\n');
         }
 
-        // Bottom border
-        output.push('└');
-        output.push_str(&"─".repeat(max_len + 2));
-        output.push('┘');
+        // Remove trailing newline (will be added by caller)
+        if output.ends_with('\n') {
+            output.pop();
+        }
 
         output
     }
@@ -461,6 +453,7 @@ impl MarkdownRenderer {
                             }
                         }
                         Tag::CodeBlock(_) => {
+                            context.ensure_blank_line();
                             code_renderer = Some(CodeBlockRenderer::new(self.use_colors));
                             if let Some(ref mut renderer) = code_renderer {
                                 renderer.start(&mut context);

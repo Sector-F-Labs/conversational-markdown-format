@@ -642,8 +642,8 @@ impl MarkdownRenderer {
             return code.to_string();
         }
 
-        // Invert colors: bright white background with black text
-        code.on_bright_white().black().to_string()
+        // Reverse video: invert colors to respect terminal theme
+        code.reversed().to_string()
     }
 
     /// Public API for rendering tables (used in tests)

@@ -3,6 +3,8 @@
 //! A markdown-based interchange format for LLM conversations.
 //! User messages are blockquotes (`>`), assistant messages are plain markdown.
 
+pub mod terminal_renderer;
+
 use serde::Serialize;
 
 /// A parsed user message with optional attribution

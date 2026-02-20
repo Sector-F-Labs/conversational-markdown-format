@@ -1,11 +1,15 @@
 //! Text formatting utilities
 
+use crate::terminal_renderer::context::FormattingState;
 use colored::*;
 use std::collections::VecDeque;
-use crate::terminal_renderer::context::FormattingState;
 
 /// Format text with applied formatting styles
-pub fn format_text(text: &str, formatting_stack: &VecDeque<FormattingState>, use_colors: bool) -> String {
+pub fn format_text(
+    text: &str,
+    formatting_stack: &VecDeque<FormattingState>,
+    use_colors: bool,
+) -> String {
     if !use_colors {
         return text.to_string();
     }

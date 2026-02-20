@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
-use cmf::Document;
 use cmf::terminal_renderer::MarkdownRenderer;
+use cmf::Document;
 use std::fs;
 use std::process::ExitCode;
 

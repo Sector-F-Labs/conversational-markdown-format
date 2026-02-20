@@ -1,0 +1,36 @@
+> Can you show me how a typical HTTP request/response cycle works?
+Sure! Here's the flow when a browser fetches a page:
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Server
+    participant Database
+    Browser->>Server: GET /page HTTP/1.1
+    Server->>Database: SELECT * FROM pages
+    Database-->>Server: rows
+    Server-->>Browser: HTTP 200 OK
+```
+
+The Browser sends a **GET** request to the Server. The Server queries the Database,
+then returns the HTML response to the Browser.
+
+> What about authentication? Where does that fit in?
+Authentication is checked before the database query:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Auth
+    Client->>API: POST /login
+    API->>Auth: validate credentials
+    Auth-->>API: token
+    API-->>Client: 200 OK + JWT
+    Client->>API: GET /data (Bearer token)
+    API->>Auth: verify token
+    Auth-->>API: valid
+    API-->>Client: 200 OK + data
+```
+
+The **JWT** is issued on login and sent as a `Bearer` token on subsequent requests.

@@ -13,11 +13,11 @@
 pub mod context;
 pub mod element_renderer;
 pub mod formatters;
-pub mod renderers;
 pub mod renderer;
+pub mod renderers;
 
 // Re-export public API
-pub use context::{RenderContext, FormattingState};
+pub use context::{FormattingState, RenderContext};
 pub use element_renderer::ElementRenderer;
 pub use renderer::MarkdownRenderer;
-pub use renderers::{CodeBlockRenderer, TableRenderer, BlockquoteRenderer, ListRenderer};
+pub use renderers::{BlockquoteRenderer, CodeBlockRenderer, ListRenderer, MermaidRenderer, TableRenderer};

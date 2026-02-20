@@ -1,12 +1,14 @@
 //! Main markdown renderer orchestrating all element renderers
 
 use atty;
-use pulldown_cmark::{Event, Parser, Tag, Options};
+use pulldown_cmark::{Event, Options, Parser, Tag};
 
-use crate::terminal_renderer::context::{RenderContext, FormattingState};
+use crate::terminal_renderer::context::{FormattingState, RenderContext};
 use crate::terminal_renderer::element_renderer::ElementRenderer;
-use crate::terminal_renderer::formatters::{format_text, format_inline_code, format_heading};
-use crate::terminal_renderer::renderers::{CodeBlockRenderer, TableRenderer, BlockquoteRenderer, ListRenderer};
+use crate::terminal_renderer::formatters::{format_heading, format_inline_code, format_text};
+use crate::terminal_renderer::renderers::{
+    BlockquoteRenderer, CodeBlockRenderer, ListRenderer, MermaidRenderer, TableRenderer,
+};
 
 pub struct MarkdownRenderer {
     use_colors: bool,
@@ -29,6 +31,7 @@ impl MarkdownRenderer {
         let mut context = RenderContext::new(self.use_colors);
 
         let mut code_renderer: Option<CodeBlockRenderer> = None;
+        let mut mermaid_renderer: Option<MermaidRenderer> = None;
         let mut table_renderer: Option<TableRenderer> = None;
         let mut blockquote_renderer: Option<BlockquoteRenderer> = None;
         let mut list_depth = 0;
@@ -40,167 +43,184 @@ impl MarkdownRenderer {
 
         for event in parser {
             match event {
-                Event::Start(tag) => {
-                    match tag {
-                        Tag::Paragraph => {
-                            context.ensure_blank_line();
+                Event::Start(tag) => match tag {
+                    Tag::Paragraph => {
+                        context.ensure_blank_line();
+                    }
+                    Tag::Heading(level, ..) => {
+                        context.ensure_newline();
+                        context.pending_newlines = 0;
+                        in_heading = true;
+                        heading_level = match level {
+                            pulldown_cmark::HeadingLevel::H1 => 1,
+                            pulldown_cmark::HeadingLevel::H2 => 2,
+                            pulldown_cmark::HeadingLevel::H3 => 3,
+                            pulldown_cmark::HeadingLevel::H4 => 4,
+                            pulldown_cmark::HeadingLevel::H5 => 5,
+                            pulldown_cmark::HeadingLevel::H6 => 6,
+                        };
+                        heading_buffer.clear();
+                    }
+                    Tag::List(ordered) => {
+                        list_depth += 1;
+                        list_renderer = Some(ListRenderer::new(ordered.is_some(), list_depth));
+                    }
+                    Tag::Item => {
+                        in_list_item = true;
+                        if let Some(ref mut renderer) = list_renderer {
+                            renderer.start_item(&mut context.output, list_depth);
                         }
-                        Tag::Heading(level, ..) => {
-                            context.ensure_newline();
-                            context.pending_newlines = 0;
-                            in_heading = true;
-                            heading_level = match level {
-                                pulldown_cmark::HeadingLevel::H1 => 1,
-                                pulldown_cmark::HeadingLevel::H2 => 2,
-                                pulldown_cmark::HeadingLevel::H3 => 3,
-                                pulldown_cmark::HeadingLevel::H4 => 4,
-                                pulldown_cmark::HeadingLevel::H5 => 5,
-                                pulldown_cmark::HeadingLevel::H6 => 6,
-                            };
-                            heading_buffer.clear();
-                        }
-                        Tag::List(ordered) => {
-                            list_depth += 1;
-                            list_renderer = Some(ListRenderer::new(ordered.is_some(), list_depth));
-                        }
-                        Tag::Item => {
-                            in_list_item = true;
-                            if let Some(ref mut renderer) = list_renderer {
-                                renderer.start_item(&mut context.output, list_depth);
+                    }
+                    Tag::CodeBlock(ref kind) => {
+                        context.ensure_blank_line();
+                        let is_mermaid = matches!(
+                            kind,
+                            pulldown_cmark::CodeBlockKind::Fenced(lang) if lang.trim() == "mermaid"
+                        );
+                        if is_mermaid {
+                            mermaid_renderer = Some(MermaidRenderer::new());
+                            if let Some(ref mut renderer) = mermaid_renderer {
+                                renderer.start(&mut context);
                             }
-                        }
-                        Tag::CodeBlock(_) => {
-                            context.ensure_blank_line();
+                        } else {
                             code_renderer = Some(CodeBlockRenderer::new());
                             if let Some(ref mut renderer) = code_renderer {
                                 renderer.start(&mut context);
                             }
                         }
-                        Tag::BlockQuote => {
-                            blockquote_renderer = Some(BlockquoteRenderer::new());
-                            context.ensure_newline();
-                        }
-                        Tag::Table(_) => {
-                            table_renderer = Some(TableRenderer::new());
-                            if let Some(ref mut renderer) = table_renderer {
-                                renderer.start(&mut context);
-                            }
-                            context.ensure_newline();
-                        }
-                        Tag::TableHead | Tag::TableRow => {
-                            if let Some(ref mut renderer) = table_renderer {
-                                renderer.start_row();
-                            }
-                        }
-                        Tag::TableCell => {
-                            if let Some(ref mut renderer) = table_renderer {
-                                renderer.start_cell();
-                            }
-                        }
-                        Tag::Emphasis => {
-                            context.formatting_stack.push_back(FormattingState::Italic);
-                        }
-                        Tag::Strong => {
-                            context.formatting_stack.push_back(FormattingState::Bold);
-                        }
-                        Tag::Link(..) => {
-                            context.formatting_stack.push_back(FormattingState::Link);
-                        }
-                        _ => {}
                     }
-                }
-                Event::End(tag) => {
-                    match tag {
-                        Tag::Paragraph => {
-                            context.push_newline();
-                            context.pending_newlines = 1;
-                        }
-                        Tag::Heading(..) => {
-                            let formatted = format_heading(&heading_buffer, heading_level, self.use_colors);
-                            context.push_str(&formatted);
-                            context.push_newline();
-                            context.push_newline();
-                            context.pending_newlines = 2;
-                            in_heading = false;
-                        }
-                        Tag::List(_) => {
-                            list_depth -= 1;
-                            if list_depth == 0 {
-                                context.push_newline();
-                                context.pending_newlines = 1;
-                                list_renderer = None;
-                            }
-                        }
-                        Tag::Item => {
-                            in_list_item = false;
-                            context.push_newline();
-                            context.pending_newlines = 1;
-                        }
-                        Tag::CodeBlock(_) => {
-                            if let Some(mut renderer) = code_renderer.take() {
-                                if let Some(output) = renderer.end(&mut context) {
-                                    context.push_str(&output);
-                                }
-                            }
-                            context.push_newline();
-                            context.pending_newlines = 1;
-                        }
-                        Tag::BlockQuote => {
-                            if let Some(mut renderer) = blockquote_renderer.take() {
-                                if let Some(output) = renderer.end(&mut context) {
-                                    context.push_str(&output);
-                                }
-                            }
-                            context.push_newline();
-                            context.pending_newlines = 1;
-                        }
-                        Tag::Table(_) => {
-                            if let Some(mut renderer) = table_renderer.take() {
-                                if let Some(output) = renderer.end(&mut context) {
-                                    context.push_str(&output);
-                                }
-                            }
-                            context.push_newline();
-                            context.pending_newlines = 1;
-                        }
-                        Tag::TableRow | Tag::TableHead => {
-                            if let Some(ref mut renderer) = table_renderer {
-                                renderer.end_row();
-                            }
-                        }
-                        Tag::TableCell => {
-                            if let Some(ref mut renderer) = table_renderer {
-                                renderer.end_cell();
-                            }
-                        }
-                        Tag::Emphasis => {
-                            context.formatting_stack.pop_back();
-                        }
-                        Tag::Strong => {
-                            context.formatting_stack.pop_back();
-                        }
-                        Tag::Link(..) => {
-                            context.formatting_stack.pop_back();
-                        }
-                        _ => {}
+                    Tag::BlockQuote => {
+                        blockquote_renderer = Some(BlockquoteRenderer::new());
+                        context.ensure_newline();
                     }
-                }
+                    Tag::Table(_) => {
+                        table_renderer = Some(TableRenderer::new());
+                        if let Some(ref mut renderer) = table_renderer {
+                            renderer.start(&mut context);
+                        }
+                        context.ensure_newline();
+                    }
+                    Tag::TableHead | Tag::TableRow => {
+                        if let Some(ref mut renderer) = table_renderer {
+                            renderer.start_row();
+                        }
+                    }
+                    Tag::TableCell => {
+                        if let Some(ref mut renderer) = table_renderer {
+                            renderer.start_cell();
+                        }
+                    }
+                    Tag::Emphasis => {
+                        context.formatting_stack.push_back(FormattingState::Italic);
+                    }
+                    Tag::Strong => {
+                        context.formatting_stack.push_back(FormattingState::Bold);
+                    }
+                    Tag::Link(..) => {
+                        context.formatting_stack.push_back(FormattingState::Link);
+                    }
+                    _ => {}
+                },
+                Event::End(tag) => match tag {
+                    Tag::Paragraph => {
+                        context.push_newline();
+                        context.pending_newlines = 1;
+                    }
+                    Tag::Heading(..) => {
+                        let formatted =
+                            format_heading(&heading_buffer, heading_level, self.use_colors);
+                        context.push_str(&formatted);
+                        context.push_newline();
+                        context.push_newline();
+                        context.pending_newlines = 2;
+                        in_heading = false;
+                    }
+                    Tag::List(_) => {
+                        list_depth -= 1;
+                        if list_depth == 0 {
+                            context.push_newline();
+                            context.pending_newlines = 1;
+                            list_renderer = None;
+                        }
+                    }
+                    Tag::Item => {
+                        in_list_item = false;
+                        context.push_newline();
+                        context.pending_newlines = 1;
+                    }
+                    Tag::CodeBlock(_) => {
+                        if let Some(mut renderer) = code_renderer.take() {
+                            if let Some(output) = renderer.end(&mut context) {
+                                context.push_str(&output);
+                            }
+                        } else if let Some(mut renderer) = mermaid_renderer.take() {
+                            if let Some(output) = renderer.end(&mut context) {
+                                context.push_str(&output);
+                            }
+                        }
+                        context.push_newline();
+                        context.pending_newlines = 1;
+                    }
+                    Tag::BlockQuote => {
+                        if let Some(mut renderer) = blockquote_renderer.take() {
+                            if let Some(output) = renderer.end(&mut context) {
+                                context.push_str(&output);
+                            }
+                        }
+                        context.push_newline();
+                        context.pending_newlines = 1;
+                    }
+                    Tag::Table(_) => {
+                        if let Some(mut renderer) = table_renderer.take() {
+                            if let Some(output) = renderer.end(&mut context) {
+                                context.push_str(&output);
+                            }
+                        }
+                        context.push_newline();
+                        context.pending_newlines = 1;
+                    }
+                    Tag::TableRow | Tag::TableHead => {
+                        if let Some(ref mut renderer) = table_renderer {
+                            renderer.end_row();
+                        }
+                    }
+                    Tag::TableCell => {
+                        if let Some(ref mut renderer) = table_renderer {
+                            renderer.end_cell();
+                        }
+                    }
+                    Tag::Emphasis => {
+                        context.formatting_stack.pop_back();
+                    }
+                    Tag::Strong => {
+                        context.formatting_stack.pop_back();
+                    }
+                    Tag::Link(..) => {
+                        context.formatting_stack.pop_back();
+                    }
+                    _ => {}
+                },
                 Event::Text(text) => {
                     if in_heading {
                         heading_buffer.push_str(&text);
                     } else if let Some(ref mut renderer) = code_renderer {
+                        renderer.handle_text(&text, &mut context);
+                    } else if let Some(ref mut renderer) = mermaid_renderer {
                         renderer.handle_text(&text, &mut context);
                     } else if let Some(ref mut renderer) = table_renderer {
                         renderer.handle_text(&text, &mut context);
                     } else if let Some(ref mut renderer) = blockquote_renderer {
                         renderer.handle_text(&text, &mut context);
                     } else {
-                        let rendered = format_text(&text, &context.formatting_stack, self.use_colors);
+                        let rendered =
+                            format_text(&text, &context.formatting_stack, self.use_colors);
                         context.push_str(&rendered);
                     }
                 }
                 Event::SoftBreak => {
                     if let Some(ref mut renderer) = code_renderer {
+                        renderer.handle_soft_break(&mut context);
+                    } else if let Some(ref mut renderer) = mermaid_renderer {
                         renderer.handle_soft_break(&mut context);
                     } else if let Some(ref mut renderer) = table_renderer {
                         renderer.handle_soft_break(&mut context);
@@ -214,6 +234,8 @@ impl MarkdownRenderer {
                 }
                 Event::HardBreak => {
                     if let Some(ref mut renderer) = code_renderer {
+                        renderer.handle_hard_break(&mut context);
+                    } else if let Some(ref mut renderer) = mermaid_renderer {
                         renderer.handle_hard_break(&mut context);
                     } else if let Some(ref mut renderer) = table_renderer {
                         renderer.handle_hard_break(&mut context);
@@ -313,9 +335,14 @@ impl MarkdownRenderer {
 
     fn has_markdown_syntax(&self, text: &str) -> bool {
         // Quick heuristic: check for common markdown patterns
-        text.contains("**") || text.contains("*") || text.contains("`") ||
-        text.contains("#") || text.contains("[") || text.contains("- ") ||
-        text.contains("1. ") || text.contains("\n")
+        text.contains("**")
+            || text.contains("*")
+            || text.contains("`")
+            || text.contains("#")
+            || text.contains("[")
+            || text.contains("- ")
+            || text.contains("1. ")
+            || text.contains("\n")
     }
 }
 
@@ -324,9 +351,7 @@ mod tests {
     use super::*;
 
     fn renderer_no_colors() -> MarkdownRenderer {
-        MarkdownRenderer {
-            use_colors: false,
-        }
+        MarkdownRenderer { use_colors: false }
     }
 
     #[test]
@@ -420,6 +445,18 @@ mod tests {
         assert!(result.contains("This is a quote"));
         assert!(result.contains("with multiple lines"));
         assert!(result.contains("▌"));
+    }
+
+    #[test]
+    fn test_mermaid_sequence_rendered() {
+        let md = "```mermaid\nsequenceDiagram\n    Alice->>Bob: Hello\n    Bob-->>Alice: Hi\n```";
+        let result = renderer_no_colors().render(md);
+        assert!(result.contains('│'), "missing lifeline");
+        assert!(result.contains('┌'), "missing box");
+        assert!(result.contains("Alice"), "missing Alice");
+        assert!(result.contains("Bob"), "missing Bob");
+        assert!(result.contains('▶'), "missing forward arrow");
+        assert!(result.contains('◀'), "missing reply arrow");
     }
 
     #[test]

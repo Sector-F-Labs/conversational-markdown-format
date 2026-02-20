@@ -304,7 +304,10 @@ Got it!"#;
 
         let doc = Document::parse(input);
         assert_eq!(doc.turns.len(), 1);
-        assert_eq!(doc.turns[0].user.content, "This is a\nmultiline\nuser message");
+        assert_eq!(
+            doc.turns[0].user.content,
+            "This is a\nmultiline\nuser message"
+        );
     }
 
     #[test]
@@ -347,15 +350,13 @@ Third paragraph."#;
     #[test]
     fn test_to_cmf_simple() {
         let doc = Document {
-            turns: vec![
-                Turn {
-                    user: UserMessage {
-                        username: None,
-                        content: "Hello!".to_string(),
-                    },
-                    assistant: "Hi there!".to_string(),
+            turns: vec![Turn {
+                user: UserMessage {
+                    username: None,
+                    content: "Hello!".to_string(),
                 },
-            ],
+                assistant: "Hi there!".to_string(),
+            }],
         };
         assert_eq!(doc.to_cmf(), "> Hello!\nHi there!");
     }
